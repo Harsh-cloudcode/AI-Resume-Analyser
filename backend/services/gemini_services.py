@@ -155,24 +155,8 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-#     prompt = f"""
-# You are an expert ATS Resume Analyzer.
 
-# Resume:
-# {resume_text}
-
-# Questions and Evaluation Criteria:
-# {questions_text}
-
-# For EACH question:
-# 1. Answer using information from the resume.
-# 2. Give score out of 100.
-# 3. Explain the score.
-# 4. Give improvement suggestions.
-
-# Return ONLY valid JSON.
-# """
-
+def analyze_resume(resume_text, questions_text):
 
     prompt = f"""
 You are an expert ATS Resume Analyzer.
