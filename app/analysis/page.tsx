@@ -37,7 +37,8 @@ export default function AnalysisPage() {
 
   console.log("Fetching candidate:", candidateId);
 
-  fetch(`http://127.0.0.1:8000/candidates/${candidateId}`)
+  // fetch(`http://127.0.0.1:8000/candidates/${candidateId}`)
+    fetch(`${import.meta.env.VITE_API_URL}/candidates/${candidateId}`)
     .then((res) => {
       if (!res.ok) {
         throw new Error(`HTTP error: ${res.status}`);
