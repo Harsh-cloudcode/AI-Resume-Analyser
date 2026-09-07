@@ -20,12 +20,18 @@ export default function ResumeUpload({ onUploadSuccess }: ResumeUploadProps) {
     // formData.append('resume', file)
     formData.append('file', file);
 
+//     try {
+//       // 🚀 REPLACE WITH YOUR ACTUAL BACKEND ENDPOINT URL
+//       const response = await fetch('http://127.0.0.1:8000/upload', { // Replace with your actual backend port and route
+//   method: 'POST',
+//   body: formData,
+// });
+
     try {
-      // 🚀 REPLACE WITH YOUR ACTUAL BACKEND ENDPOINT URL
-      const response = await fetch('http://127.0.0.1:8000/upload', { // Replace with your actual backend port and route
-  method: 'POST',
-  body: formData,
-});
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
+    method: 'POST',
+    body: formData,
+  });
       if (!response.ok) throw new Error('Upload failed');
 
       const data = await response.json();
