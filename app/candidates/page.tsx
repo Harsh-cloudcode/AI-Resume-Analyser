@@ -153,7 +153,7 @@ const [loading, setLoading] = useState(true)
 
 
   useEffect(() => {
-  const API_URL = import.meta.env.VITE_API_URL;
+  fetch(`${import.meta.env.VITE_API_URL}/candidates`)
 
   console.log("API URL:", API_URL);
 
