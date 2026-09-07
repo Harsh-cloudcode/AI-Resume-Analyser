@@ -153,7 +153,7 @@ const [loading, setLoading] = useState(true)
 
 
   useEffect(() => {
-  fetch(`${import.meta.env.VITE_API_URL}/candidates`)
+  const API_URL = import.meta.env.VITE_API_URL;
 
   console.log("API URL:", API_URL);
 
@@ -177,7 +177,6 @@ const [loading, setLoading] = useState(true)
       setLoading(false);
     });
 }, []);
-
 
 
 
