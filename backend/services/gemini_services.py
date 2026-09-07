@@ -129,16 +129,31 @@
 
 
 
+# import google.generativeai as genai
+
+# import json
+
+# genai.configure(api_key="YOUR_API_KEY")
+
+# model = genai.GenerativeModel("gemini-2.5-flash")
+
+
+# def analyze_resume(resume_text, questions_text):
+
+
+
 import google.generativeai as genai
-
 import json
+import os
+from dotenv import load_dotenv
 
-genai.configure(api_key="YOUR_API_KEY")
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+genai.configure(api_key=GEMINI_API_KEY)
 
 model = genai.GenerativeModel("gemini-2.5-flash")
-
-
-def analyze_resume(resume_text, questions_text):
 
 #     prompt = f"""
 # You are an expert ATS Resume Analyzer.
