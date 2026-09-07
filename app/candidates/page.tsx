@@ -142,7 +142,9 @@ const [candidates, setCandidates] = useState<any[]>([])
 const [loading, setLoading] = useState(true)
 
 useEffect(() => {
-  fetch("http://127.0.0.1:8000/candidates")
+  // fetch("http://127.0.0.1:8000/candidates")
+
+  fetch(`${import.meta.env.VITE_API_URL}/candidates`)
     .then((res) => res.json())
     .then((data) => setCandidates(data))
     .catch((err) => console.error(err))
