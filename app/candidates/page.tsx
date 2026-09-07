@@ -141,42 +141,42 @@ const [roleFilter, setRoleFilter] = useState("all");
 const [candidates, setCandidates] = useState<any[]>([])
 const [loading, setLoading] = useState(true)
 
-// useEffect(() => {
-//   // fetch("http://127.0.0.1:8000/candidates")
+useEffect(() => {
+  // fetch("http://127.0.0.1:8000/candidates")
 
-//   fetch(`${import.meta.env.VITE_API_URL}/candidates`)
-//     .then((res) => res.json())
-//     .then((data) => setCandidates(data))
-//     .catch((err) => console.error(err))
-// }, [])
+  fetch(`${import.meta.env.VITE_API_URL}/candidates`)
+    .then((res) => res.json())
+    .then((data) => setCandidates(data))
+    .catch((err) => console.error(err))
+}, [])
 
 
 
-  useEffect(() => {
-  const API_URL = import.meta.env.VITE_API_URL;
+//   useEffect(() => {
+//   const API_URL = import.meta.env.VITE_API_URL;
 
-  console.log("API URL:", API_URL);
+//   console.log("API URL:", API_URL);
 
-  fetch(`${API_URL}/candidates`)
-    .then((res) => {
-      console.log("Status:", res.status);
+//   fetch(`${API_URL}/candidates`)
+//     .then((res) => {
+//       console.log("Status:", res.status);
 
-      if (!res.ok) {
-        throw new Error(`HTTP error: ${res.status}`);
-      }
+//       if (!res.ok) {
+//         throw new Error(`HTTP error: ${res.status}`);
+//       }
 
-      return res.json();
-    })
-    .then((data) => {
-      console.log("Candidates from API:", data);
-      setCandidates(data);
-      setLoading(false);
-    })
-    .catch((err) => {
-      console.error("Failed to fetch candidates:", err);
-      setLoading(false);
-    });
-}, []);
+//       return res.json();
+//     })
+//     .then((data) => {
+//       console.log("Candidates from API:", data);
+//       setCandidates(data);
+//       setLoading(false);
+//     })
+//     .catch((err) => {
+//       console.error("Failed to fetch candidates:", err);
+//       setLoading(false);
+//     });
+// }, []);
 
 
 
