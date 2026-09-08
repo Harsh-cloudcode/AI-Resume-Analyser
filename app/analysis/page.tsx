@@ -24,6 +24,9 @@ import { DashboardLayout } from "../../components/dashboard-layout"
 export default function AnalysisPage() {
 
    const [analysisData, setAnalysisData] = useState<any>(null);
+  const score = analysisData?.analysis_report?.overall_score ?? 0
+
+const isShortlisted = score >= 65
    
   
   useEffect(() => {
@@ -82,16 +85,22 @@ export default function AnalysisPage() {
             
           
           <div className="flex gap-2">
-            <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
-              <ThumbsDown className="h-4 w-4 mr-2" />
-              Reject
-            </Button>
-            <Button className="bg-success text-success-foreground hover:bg-success/90">
-              <ThumbsUp className="h-4 w-4 mr-2" />
-              Shortlist
-            </Button>
-          </div>
-        </div>
+
+  {isShortlisted ? (
+    <Button className="bg-green-600 text-white hover:bg-green-700">
+      <ThumbsUp className="h-4 w-4 mr-2" />
+      Shortlisted
+    </Button>
+  ) : (
+    <Button
+      variant="outline"
+      className="border-red-500 text-red-500 hover:bg-red-500/10"
+    >
+      <ThumbsDown className="h-4 w-4 mr-2" />
+      Rejected
+    </Button>
+  )}
+
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Candidate Profile */}
