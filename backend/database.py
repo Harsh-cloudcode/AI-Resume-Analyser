@@ -18,6 +18,7 @@ client = MongoClient(
 db = client["resume_analyzer"]
 
 candidates_collection = db["candidates"]
+questions_collection = db["questions"]
 
 try:
     client.admin.command("ping")
