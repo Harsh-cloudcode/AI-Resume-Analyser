@@ -346,7 +346,7 @@ const initialQuestions = [
 
 
 
-const categories = ["Technical", "Behavioral", "Process", "Growth", "Leadership"]
+
 
 function getCategoryColor(category: string) {
   switch (category) {
@@ -366,18 +366,36 @@ function getCategoryColor(category: string) {
 }
 
 
+const categories = ["Technical", "Behavioral", "Process", "Growth", "Leadership"]
+interface Question {
+  id: string
+  question: string
+  category: string
+  weight: number
+}
 
+interface NewQuestion {
+  question: string
+  category: string
+  weight: number
+}
 
 
 export default function QuestionsPage() {
   // const [questions, setQuestions] = useState(initialQuestions)
-  const [questions, setQuestions] = useState(initialQuestions)
+  const [questions, setQuestions] = useState<Question[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingQuestion, setEditingQuestion] = useState<typeof initialQuestions[0] | null>(null)
-  const [newQuestion, setNewQuestion] = useState({ question: "", category: "", weight: 10 })
-  
+   const [editingQuestion, setEditingQuestion] =
+    useState<Question | null>(null)
 
+  const [newQuestion, setNewQuestion] =
+    useState<NewQuestion>({
+      question: "",
+      category: "",
+      weight: 10,
+    })
+  
   useEffect(() => {
   const loadQuestions = async () => {
     try {
@@ -389,14 +407,14 @@ export default function QuestionsPage() {
 
       const data = await response.json()
 
-      const backendQuestions = data.questions.map(
-        (question: any, index: number) => ({
-          id: question.id || String(index + 1),
-          question: question.question,
-          category: question.category,
-          weight: question.weight,
-        })
-      )
+      console.log("Questions from MongoDB:", data)
+
+      const backendQuestions = data.questions.map((question: any) => ({
+        id: question._id,
+        question: question.question,
+        category: question.category,
+        weight: question.weight,
+      }))
 
       setQuestions(backendQuestions)
     } catch (error) {
@@ -416,114 +434,138 @@ export default function QuestionsPage() {
   const totalWeight = questions.reduce((sum, q) => sum + q.weight, 0)
 
 
- const saveQuestionsToBackend = async () => {
-  try {
-    const response = await fetch(
-      "http://localhost:8000/save-questions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          questions,
-        }),
-      }
-    );
-
-    const data = await response.json();
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
+ 
+   
 
   
   const handleSave = async () => {
-  let updatedQuestions;
+  if (!newQuestion.question.trim() || !newQuestion.category) {
+    return
+  }
 
-  if (editingQuestion) {
-    updatedQuestions = questions.map((q) =>
-      q.id === editingQuestion.id
-        ? {
-            ...q,
+  try {
+    if (editingQuestion) {
+      // UPDATE EXISTING QUESTION
+      const response = await fetch(
+        `http://localhost:8000/questions/${editingQuestion.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             question: newQuestion.question,
             category: newQuestion.category,
             weight: newQuestion.weight,
-          }
-        : q
-    );
-  } else {
-    updatedQuestions = [
-      ...questions,
-      {
-        id: Date.now().toString(),
-        question: newQuestion.question,
-        category: newQuestion.category,
-        weight: newQuestion.weight,
-      },
-    ];
-  }
+          }),
+        }
+      )
 
-  setQuestions(updatedQuestions);
+      if (!response.ok) {
+        throw new Error("Failed to update question")
+      }
 
-  try {
-    await fetch("http://localhost:8000/save-questions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        questions: updatedQuestions,
-      }),
-    });
-  } catch (error) {
-    console.error(error);
-  }
+      const data = await response.json()
+      const updatedQuestion = data.question
 
-  setIsDialogOpen(false);
-  setEditingQuestion(null);
-  setNewQuestion({
-    question: "",
-    category: "",
-    weight: 10,
-  });
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === editingQuestion.id
+            ? {
+                id: updatedQuestion._id,
+                question: updatedQuestion.question,
+                category: updatedQuestion.category,
+                weight: updatedQuestion.weight,
+              }
+            : q
+        )
+      )
 
+      console.log("Question updated:", updatedQuestion)
+    } else {
+      // CREATE NEW QUESTION
+      const response = await fetch(
+        "http://localhost:8000/questions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            question: newQuestion.question,
+            category: newQuestion.category,
+            weight: newQuestion.weight,
+          }),
+        }
+      )
 
-  // const handleSave = () => {
-  //   if (editingQuestion) {
-  //     setQuestions(
-  //       questions.map((q) =>
-  //         q.id === editingQuestion.id
-  //           ? { ...q, question: newQuestion.question, category: newQuestion.category, weight: newQuestion.weight }
-  //           : q
-  //       )
-  //     )
-  //   } else {
-  //     setQuestions([
-  //       ...questions,
-  //       {
-  //         id: String(Date.now()),
-  //         question: newQuestion.question,
-  //         category: newQuestion.category,
-  //         weight: newQuestion.weight,
-  //       },
-  //     ])
-  //   }
+      if (!response.ok) {
+        throw new Error("Failed to create question")
+      }
+
+      const data = await response.json()
+      const createdQuestion = data.question
+
+      setQuestions((prev) => [
+        ...prev,
+        {
+          id: createdQuestion._id,
+          question: createdQuestion.question,
+          category: createdQuestion.category,
+          weight: createdQuestion.weight,
+        },
+      ])
+
+      console.log("Question created:", createdQuestion)
+    }
+
+    // CLOSE DIALOG AND RESET FORM
     setIsDialogOpen(false)
     setEditingQuestion(null)
-    setNewQuestion({ question: "", category: "", weight: 10 })
+    setNewQuestion({
+      question: "",
+      category: "",
+      weight: 10,
+    })
+  } catch (error) {
+    console.error("Failed to save question:", error)
   }
+}
+  const handleEdit = (question: Question) => {
+  setEditingQuestion(question)
 
-  const handleEdit = (question: typeof initialQuestions[0]) => {
-    setEditingQuestion(question)
-    setNewQuestion({ question: question.question, category: question.category, weight: question.weight })
-    setIsDialogOpen(true)
-  }
+  setNewQuestion({
+    question: question.question,
+    category: question.category,
+    weight: question.weight,
+  })
 
-  const handleDelete = (id: string) => {
-    setQuestions(questions.filter((q) => q.id !== id))
+  setIsDialogOpen(true)
+}
+
+  const handleDelete = async (id: string) => {
+  try {
+    const response = await fetch(
+      `http://localhost:8000/questions/${id}`,
+      {
+        method: "DELETE",
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error("Failed to delete question")
+    }
+
+    setQuestions((prev) =>
+      prev.filter((q) => q.id !== id)
+    )
+
+    console.log("Question deleted:", id)
+
+  } catch (error) {
+    console.error("Failed to delete question:", error)
   }
+}
 
   return (
     <DashboardLayout>
@@ -710,298 +752,6 @@ export default function QuestionsPage() {
         </Card>
       </div>
     </DashboardLayout>
+  
   )
 }
-
-// "use client"
-
-// import { useState } from "react"
-// import { Plus, Search, Edit, Trash2, GripVertical, BrainCircuit, Loader2 } from "lucide-react"
-// import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-// import { Input } from "../../components/ui/input"
-// import { Button } from "../../components/ui/button"
-// import { Badge } from "../../components/ui/badge"
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogDescription,
-//   DialogFooter,
-//   DialogHeader,
-//   DialogTitle,
-//   DialogTrigger,
-// } from "../../components/ui/dialog"
-// import { Label } from "../../components/ui/label"
-// import { Textarea } from "../../components/ui/textarea"
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "../../components/ui/select"
-// import { DashboardLayout } from "../../components/dashboard-layout"
-
-// const initialQuestions = [
-//   { id: "1", question: "Describe a challenging technical problem you solved", category: "Technical", weight: 25 },
-//   { id: "2", question: "How do you handle conflicting priorities?", category: "Behavioral", weight: 20 },
-//   { id: "3", question: "What is your experience with agile methodologies?", category: "Process", weight: 15 },
-//   { id: "4", question: "How do you stay updated with technology trends?", category: "Growth", weight: 10 },
-//   { id: "5", question: "Describe your experience leading a team", category: "Leadership", weight: 15 },
-//   { id: "6", question: "How do you approach code reviews?", category: "Technical", weight: 15 },
-// ]
-
-// const categories = ["Technical", "Behavioral", "Process", "Growth", "Leadership"]
-
-// function getCategoryColor(category: string) {
-//   switch (category) {
-//     case "Technical": return "bg-chart-1/20 text-chart-1"
-//     case "Behavioral": return "bg-chart-2/20 text-chart-2"
-//     case "Process": return "bg-chart-3/20 text-chart-3"
-//     case "Growth": return "bg-chart-4/20 text-chart-4"
-//     case "Leadership": return "bg-chart-5/20 text-chart-5"
-//     default: return "bg-muted text-muted-foreground"
-//   }
-// }
-
-// export default function QuestionsPage() {
-//   const [questions, setQuestions] = useState(initialQuestions)
-//   const [searchQuery, setSearchQuery] = useState("")
-//   const [isDialogOpen, setIsDialogOpen] = useState(false)
-//   const [editingQuestion, setEditingQuestion] = useState<typeof initialQuestions[0] | null>(null)
-//   const [newQuestion, setNewQuestion] = useState({ question: "", category: "", weight: 10 })
-
-//   // ─── AI अनालिसिससाठी नवीन स्टेट्स ───
-//   const [loading, setLoading] = useState<boolean>(false)
-//   const [aiResult, setAiResult] = useState<{ analysis_report: string; final_score: number } | null>(null)
-
-//   const filteredQuestions = questions.filter(
-//     (q) =>
-//       q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//       q.category.toLowerCase().includes(searchQuery.toLowerCase())
-//   )
-
-//   const totalWeight = questions.reduce((sum, q) => sum + q.weight, 0)
-
-//   const handleSave = () => {
-//     if (editingQuestion) {
-//       setQuestions(
-//         questions.map((q) =>
-//           q.id === editingQuestion.id
-//             ? { ...q, question: newQuestion.question, category: newQuestion.category, weight: newQuestion.weight }
-//             : q
-//         )
-//       )
-//     } else {
-//       setQuestions([
-//         ...questions,
-//         {
-//           id: String(Date.now()),
-//           question: newQuestion.question,
-//           category: newQuestion.category,
-//           weight: newQuestion.weight,
-//         },
-//       ])
-//     }
-//     setIsDialogOpen(false)
-//     setEditingQuestion(null)
-//     setNewQuestion({ question: "", category: "", weight: 10 })
-//   }
-
-//   const handleEdit = (question: typeof initialQuestions[0]) => {
-//     setEditingQuestion(question)
-//     setNewQuestion({ question: question.question, category: question.category, weight: question.weight })
-//     setIsDialogOpen(true)
-//   }
-
-//   const handleDelete = (id: string) => {
-//     setQuestions(questions.filter((q) => q.id !== id))
-//   }
-
-//   // ─── FASTAPI कडे डेटा पाठवणारे फंक्शन ───
-//   const triggerAIAnalysis = async () => {
-//     setLoading(true)
-//     setAiResult(null) // जुना रिझल्ट क्लिअर करा
-
-//     try {
-//       const response = await fetch("http://127.0.0", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({
-//           questions: questions,
-//           categories: categories
-//         }),
-//       })
-
-//       if (!response.ok) throw new Error("AI Server Error")
-
-//       const data = await response.json()
-//       setAiResult(data) // बॅकएंडचा रिझल्ट सेव्ह करा
-//     } catch (error) {
-//       console.error("AI Analysis Failed:", error)
-//       alert("बॅकएंड सर्व्हरशी कनेक्ट होऊ शकले नाही!")
-//     } finally {
-//       setLoading(false)
-//     }
-//   }
-
-//     return (
-//     <DashboardLayout>
-//       <div className="space-y-6">
-//         {/* Header Section */}
-//         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-//           <div>
-//             <h1 className="text-2xl font-bold text-foreground">Question Bank</h1>
-//             <p className="text-muted-foreground">Manage evaluation questions and their weights</p>
-//           </div>
-          
-//           <div className="flex gap-2">
-//             {/* ─── AI ANALYSIS BUTTON ─── */}
-//             <Button 
-//               onClick={async () => {
-//                 setLoading(true); setAiResult(null);
-//                 try {
-//                   const res = await fetch("http://127.0.0", {
-//                     method: "POST", headers: { "Content-Type": "application/json" },
-//                     body: JSON.stringify({ questions, categories }),
-//                   });
-//                   const data = await res.json(); setAiResult(data);
-//                 } catch { alert("बॅकएंड कनेक्ट झाले नाही!"); } finally { setLoading(false); }
-//               }} 
-//               disabled={loading || questions.length === 0}
-//               className="bg-purple-600 text-white hover:bg-purple-700"
-//             >
-//               {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <BrainCircuit className="h-4 w-4 mr-2" />}
-//               {loading ? "Analyzing..." : "Analyze with AI"}
-//             </Button>
-
-//             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-//               <DialogTrigger >
-//                 <Button
-//                   className="bg-primary text-primary-foreground hover:bg-primary/90"
-//                   onClick={() => {
-//                     setEditingQuestion(null)
-//                     setNewQuestion({ question: "", category: "", weight: 10 })
-//                   }}
-//                 >
-//                   <Plus className="h-4 w-4 mr-2" /> Add Question
-//                 </Button>
-//               </DialogTrigger>
-//               <DialogContent className="bg-card border-border">
-//                 <DialogHeader>
-//                   <DialogTitle className="text-foreground">
-//                     {editingQuestion ? "Edit Question" : "Add New Question"}
-//                   </DialogTitle>
-//                 </DialogHeader>
-//                 <div className="space-y-4 py-4">
-//                   <div className="space-y-2">
-//                     <Label htmlFor="question" className="text-foreground">Question</Label>
-//                     <Textarea
-//                       id="question"
-//                       placeholder="Enter your question..."
-//                       value={newQuestion.question}
-//                       onChange={(e) => setNewQuestion({ ...newQuestion, question: e.target.value })}
-//                       className="bg-secondary border-0"
-//                     />
-//                   </div>
-//                   <div className="grid grid-cols-2 gap-4">
-//                     <div className="space-y-2">
-//                       <Label htmlFor="category" className="text-foreground">Category</Label>
-//                       <Select
-//                         value={newQuestion.category}
-//                         onValueChange={(value) => setNewQuestion({ ...newQuestion })}
-//                       >
-//                         <SelectTrigger className="bg-secondary border-0">
-//                           <SelectValue placeholder="Select category" />
-//                         </SelectTrigger>
-//                         <SelectContent>
-//                           {categories.map((cat) => (
-//                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-//                           ))}
-//                         </SelectContent>
-//                       </Select>
-//                     </div>
-//                     <div className="space-y-2">
-//                       <Label htmlFor="weight" className="text-foreground">Weight (%)</Label>
-//                       <Input
-//                         id="weight"
-//                         type="number"
-//                         min="1"
-//                         max="100"
-//                         value={newQuestion.weight}
-//                         onChange={(e) => setNewQuestion({ ...newQuestion, weight: parseInt(e.target.value) || 0 })}
-//                         className="bg-secondary border-0"
-//                       />
-//                     </div>
-//                   </div>
-//                 </div>
-//                 <DialogFooter>
-//                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-//                   <Button onClick={handleSave} disabled={!newQuestion.question || !newQuestion.category}>
-//                     {editingQuestion ? "Update" : "Add"}
-//                   </Button>
-//                 </DialogFooter>
-//               </DialogContent>
-//             </Dialog>
-//           </div>
-//         </div>
-
-//         {/* ─── AI ANALYSIS DISPLAY CARD ─── */}
-//         {aiResult && (
-//           <Card className="border-purple-500/30 bg-purple-500/10 p-4">
-//             <div className="flex items-center justify-between mb-2">
-//               <h3 className="font-bold text-purple-400 flex items-center gap-2"><BrainCircuit className="h-4 w-4"/> AI Evaluation</h3>
-//               <Badge className="bg-purple-600 text-white">Score: {aiResult.final_score}%</Badge>
-//             </div>
-//             <p className="text-sm text-muted-foreground">{aiResult.analysis_report}</p>
-//           </Card>
-//         )}
-
-//         {/* Stats Grid and Search List */}
-//         <div className="grid gap-4 md:grid-cols-3">
-//           <Card className="bg-card border-border">
-//             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Questions</CardTitle></CardHeader>
-//             <CardContent><div className="text-2xl font-bold text-foreground">{questions.length}</div></CardContent>
-//           </Card>
-//           <Card className="bg-card border-border">
-//             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Weight</CardTitle></CardHeader>
-//             <CardContent><div className="text-2xl font-bold text-foreground">{totalWeight}%</div></CardContent>
-//           </Card>
-//         </div>
-
-//         <Card className="bg-card border-border p-4">
-//           <div className="relative mb-4">
-//             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-//             <Input
-//               placeholder="Search questions..."
-//               value={searchQuery}
-//               onChange={(e) => setSearchQuery(e.target.value)}
-//               className="pl-8 bg-secondary border-0"
-//             />
-//           </div>
-//           <div className="space-y-3">
-//             {filteredQuestions.map((q) => (
-//               <div key={q.id} className="flex items-center justify-between p-3 border rounded-lg border-border bg-card/50">
-//                 <div className="flex gap-2">
-//                   <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mt-1" />
-//                   <div>
-//                     <p className="text-sm font-medium text-foreground">{q.question}</p>
-//                     <div className="flex gap-1.5 mt-1">
-//                       <Badge className={getCategoryColor(q.category)}>{q.category}</Badge>
-//                       <Badge variant="outline">{q.weight}%</Badge>
-//                     </div>
-//                   </div>
-//                 </div>
-//                 <div className="flex gap-1">
-//                   <Button variant="ghost" size="icon" onClick={() => handleEdit(q as any)}><Edit className="h-4 w-4 text-muted-foreground" /></Button>
-//                   <Button variant="ghost" size="icon" onClick={() => handleDelete(q.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//         </Card>
-//       </div>
-//     </DashboardLayout>
-//   )
-// }
