@@ -22,12 +22,20 @@ import { Button } from "../components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet"
 
 const navItems = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Candidates", href: "/candidates", icon: Users },
-  { label: "Resume Analysis", href: "/analysis", icon: FileSearch },
+  // { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  // { label: "Candidates", href: "/candidates", icon: Users },
+  // { label: "Resume Analysis", href: "/analysis", icon: FileSearch },
+  // { label: "Question Bank", href: "/questions", icon: HelpCircle },
+  // { label: "Analytics", href: "/analytics", icon: BarChart3 },
+  // { label: "History", href: "/history", icon: History },
+  // { label: "Settings", href: "/settings", icon: Settings },
+
+    { label: "Analytics", href: "/analytics", icon: BarChart3 },
   { label: "Question Bank", href: "/questions", icon: HelpCircle },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "History", href: "/history", icon: History },
+  // { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Resume Analysis", href: "/analysis", icon: FileSearch },
+  { label: "Candidates", href: "/candidates", icon: Users },
+  // { label: "History", href: "/history", icon: History },
   { label: "Settings", href: "/settings", icon: Settings },
 ]
 
