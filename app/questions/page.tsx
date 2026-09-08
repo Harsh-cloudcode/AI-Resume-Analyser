@@ -396,10 +396,12 @@ export default function QuestionsPage() {
       weight: 10,
     })
   
-  useEffect(() => {
+useEffect(() => {
   const loadQuestions = async () => {
     try {
-      const response = await fetch("http://localhost:8000/questions")
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/questions`
+      )
 
       if (!response.ok) {
         throw new Error("Failed to load questions")
@@ -421,6 +423,9 @@ export default function QuestionsPage() {
       console.error("Failed to load questions:", error)
     }
   }
+
+  loadQuestions()
+}, [])
 
   loadQuestions()
 }, [])
