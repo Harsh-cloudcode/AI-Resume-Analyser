@@ -32,989 +32,899 @@ import { useState, useEffect } from "react"
 
 import ResumeUpload from "../../components/ui/upload_btn"
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../components/ui/table"
+
+import { DashboardLayout } from "../../components/dashboard-layout"
+
+
 export default function AnalysisPage() {
+
   const [analysisData, setAnalysisData] = useState<any>(null)
 
-  /*
-  ============================================================
-  FETCH CANDIDATE ANALYSIS
-  ============================================================
-  */
 
-  useEffect(() => {
-    const loadCandidate = async () => {
-      const params = new URLSearchParams(window.location.search)
+  // =========================================================
+  // GET SCORE
+  // =========================================================
 
-      const candidateId = params.get("id")
+  const score =
+    analysisData?.analysis_report?.overall_score ?? 0
 
-      if (!candidateId) {
-        console.error("No candidate ID found in URL")
-        return
-      }
 
-      const API_URL = import.meta.env.VITE_API_URL
+  // =========================================================
+  // SHORTLIST / REJECT
+  // 65 OR ABOVE = SHORTLISTED
+  // BELOW 65 = REJECTED
+  // =========================================================
 
-      console.log("API URL:", API_URL)
-      console.log("Fetching candidate:", candidateId)
-
-      try {
-        const response = await fetch(
-          `${API_URL}/candidates/${candidateId}`
-        )
-
-        console.log(
-          "Candidate API status:",
-          response.status
-        )
-
-        if (!response.ok) {
-          throw new Error(
-            `HTTP error: ${response.status}`
-          )
-        }
-
-        const data = await response.json()
-
-        console.log("Candidate data:", data)
-
-        setAnalysisData(data)
-      } catch (error) {
-        console.error(
-          "Failed to fetch candidate:",
-          error
-        )
-      }
-    }
-
-    loadCandidate()
-  }, [])
-
-  /*
-  ============================================================
-  LOADING STATE
-  ============================================================
-  */
-
-  if (!analysisData) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 text-lg font-semibold">
-            Loading analysis...
-          </div>
-
-          <p className="text-sm text-muted-foreground">
-            Please wait while we load the candidate analysis.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  /*
-  ============================================================
-  ANALYSIS DATA
-  ============================================================
-  */
-
-  const report = analysisData?.analysis_report
-
-  const score = report?.overall_score ?? 0
-
-  // Shortlist threshold = 65
   const isShortlisted = score >= 65
 
-  const candidate = report?.candidate ?? {}
 
-  const recommendation =
-    report?.recommendation ?? {}
+  // =========================================================
+  // FETCH EXISTING CANDIDATE ANALYSIS
+  // =========================================================
 
-  const strengths =
-    report?.strengths ?? []
+  useEffect(() => {
 
-  const weaknesses =
-    report?.weaknesses ?? []
+    const params = new URLSearchParams(
+      window.location.search
+    )
 
-  const scoreBreakdown =
-    report?.score_breakdown ?? []
+    const candidateId = params.get("id")
 
-  const questions =
-    report?.questions ?? []
 
-  /*
-  ============================================================
-  UI
-  ============================================================
-  */
+    // If there is no candidate ID,
+    // this is probably a fresh resume upload.
+    if (!candidateId) {
+      console.log("No candidate ID found - fresh upload")
+      return
+    }
+
+
+    console.log(
+      "Fetching candidate:",
+      candidateId
+    )
+
+
+    const API_URL = import.meta.env.VITE_API_URL
+
+
+    fetch(
+      `${API_URL}/candidates/${candidateId}`
+    )
+
+      .then((res) => {
+
+        if (!res.ok) {
+
+          throw new Error(
+            `HTTP error: ${res.status}`
+          )
+
+        }
+
+        return res.json()
+
+      })
+
+      .then((data) => {
+
+        console.log(
+          "Candidate data:",
+          data
+        )
+
+        setAnalysisData(data)
+
+      })
+
+      .catch((err) => {
+
+        console.error(
+          "Failed to fetch candidate:",
+          err
+        )
+
+      })
+
+  }, [])
+
 
   return (
-    <div className="space-y-6">
 
-      {/* ================================================== */}
-      {/* HEADER */}
-      {/* ================================================== */}
+    <DashboardLayout>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="space-y-6">
+
+
+        {/* =====================================================
+            PAGE HEADER
+        ===================================================== */}
 
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+
+          <h1 className="text-3xl font-bold">
             Resume Analysis
           </h1>
 
-          <p className="text-muted-foreground">
-            AI-powered candidate resume evaluation
+          <p className="text-muted-foreground mt-1">
+            Analyze candidate resume and evaluate
+            their suitability for the role.
           </p>
-        </div>
-
-        <div className="flex gap-2">
-
-          {isShortlisted ? (
-            <Button className="bg-green-600 text-white hover:bg-green-700">
-              <ThumbsUp className="mr-2 h-4 w-4" />
-              Shortlisted
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              className="border-red-500 text-red-500 hover:bg-red-500/10"
-            >
-              <ThumbsDown className="mr-2 h-4 w-4" />
-              Rejected
-            </Button>
-          )}
 
         </div>
-      </div>
 
 
-      {/* ================================================== */}
-      {/* CANDIDATE PROFILE */}
-      {/* ================================================== */}
-
-      <Card>
-
-        <CardHeader>
-          <CardTitle>
-            Candidate Profile
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Name
-              </p>
-
-              <p className="mt-1 font-semibold">
-                {candidate?.name || "Not available"}
-              </p>
-            </div>
-
-
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Role
-              </p>
-
-              <p className="mt-1 font-semibold">
-                {candidate?.role || "Not available"}
-              </p>
-            </div>
-
-
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Email
-              </p>
-
-              <p className="mt-1 font-semibold">
-                {candidate?.email || "Not available"}
-              </p>
-            </div>
-
-
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Phone
-              </p>
-
-              <p className="mt-1 font-semibold">
-                {candidate?.phone || "Not available"}
-              </p>
-            </div>
-
-
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Experience
-              </p>
-
-              <p className="mt-1 font-semibold">
-                {candidate?.experience || "Not available"}
-              </p>
-            </div>
-
-
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Location
-              </p>
-
-              <p className="mt-1 font-semibold">
-                {candidate?.location || "Not available"}
-              </p>
-            </div>
-
-          </div>
-
-        </CardContent>
-      </Card>
-
-
-      {/* ================================================== */}
-      {/* MAIN SCORE */}
-      {/* ================================================== */}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-
-        {/* SCORE CARD */}
+        {/* =====================================================
+            RESUME UPLOAD
+        ===================================================== */}
 
         <Card>
 
           <CardHeader>
+
             <CardTitle>
-              Resume Score
+              Upload Resume
             </CardTitle>
+
           </CardHeader>
+
 
           <CardContent>
 
-            <div className="flex flex-col items-center justify-center">
+            <ResumeUpload
 
-              <div className="relative flex h-40 w-40 items-center justify-center">
+              onUploadSuccess={(data) => {
 
-                <svg
-                  className="h-40 w-40 -rotate-90"
-                  viewBox="0 0 100 100"
+                console.log(
+                  "Parsed:",
+                  data
+                )
+
+                setAnalysisData(data)
+
+              }}
+
+            />
+
+          </CardContent>
+
+        </Card>
+
+
+        {/* =====================================================
+            SHOW ANALYSIS ONLY AFTER DATA EXISTS
+        ===================================================== */}
+
+        {analysisData && (
+
+          <>
+
+
+            {/* =================================================
+                SUMMARY CARDS
+            ================================================= */}
+
+            <div className="grid gap-4 md:grid-cols-3">
+
+
+              {/* OVERALL SCORE */}
+
+              <Card>
+
+                <CardHeader
+                  className="flex flex-row items-center justify-between space-y-0 pb-2"
                 >
 
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    fill="none"
-                    className="text-muted"
-                  />
+                  <CardTitle className="text-sm font-medium">
+                    Overall Score
+                  </CardTitle>
 
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeDasharray={`${score}, 100`}
-                    pathLength="100"
-                    strokeLinecap="round"
-                    className={
-                      score >= 65
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }
-                  />
+                  <Star className="h-5 w-5 text-yellow-500" />
 
-                </svg>
+                </CardHeader>
 
-                <div className="absolute text-center">
 
-                  <div className="text-4xl font-bold">
+                <CardContent>
+
+                  <div className="text-3xl font-bold">
+
                     {score}
-                  </div>
 
-                  <div className="text-sm text-muted-foreground">
-                    / 100
-                  </div>
-
-                </div>
-
-              </div>
-
-
-              <div className="mt-4">
-
-                {isShortlisted ? (
-                  <Badge className="bg-green-600">
-                    Shortlisted
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive">
-                    Rejected
-                  </Badge>
-                )}
-
-              </div>
-
-            </div>
-
-          </CardContent>
-
-        </Card>
-
-
-        {/* RECOMMENDATION */}
-
-        <Card className="lg:col-span-2">
-
-          <CardHeader>
-            <CardTitle>
-              AI Recommendation
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent>
-
-            <div className="space-y-5">
-
-              <div className="flex items-center gap-3">
-
-                {isShortlisted ? (
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                ) : (
-                  <XCircle className="h-6 w-6 text-red-500" />
-                )}
-
-                <div>
-
-                  <p className="font-semibold">
-                    {recommendation?.status ||
-                      (isShortlisted
-                        ? "Shortlisted"
-                        : "Rejected")}
-                  </p>
-
-                  <p className="text-sm text-muted-foreground">
-                    Based on the overall resume evaluation
-                  </p>
-
-                </div>
-
-              </div>
-
-
-              <div>
-
-                <h3 className="mb-2 font-semibold">
-                  Summary
-                </h3>
-
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {recommendation?.summary ||
-                    "No recommendation summary available."}
-                </p>
-
-              </div>
-
-
-              <div>
-
-                <h3 className="mb-2 font-semibold">
-                  Key Insight
-                </h3>
-
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {recommendation?.key_insight ||
-                    "No key insight available."}
-                </p>
-
-              </div>
-
-            </div>
-
-          </CardContent>
-
-        </Card>
-
-      </div>
-
-
-      {/* ================================================== */}
-      {/* TABS */}
-      {/* ================================================== */}
-
-      <Tabs defaultValue="overview" className="w-full">
-
-        <TabsList className="grid w-full grid-cols-3">
-
-          <TabsTrigger value="overview">
-            Overview
-          </TabsTrigger>
-
-          <TabsTrigger value="questions">
-            Question Evaluation
-          </TabsTrigger>
-
-          <TabsTrigger value="candidate">
-            Candidate Details
-          </TabsTrigger>
-
-        </TabsList>
-
-
-        {/* ================================================== */}
-        {/* OVERVIEW */}
-        {/* ================================================== */}
-
-        <TabsContent
-          value="overview"
-          className="space-y-6"
-        >
-
-          {/* SCORE BREAKDOWN */}
-
-          <Card>
-
-            <CardHeader>
-              <CardTitle>
-                Score Breakdown
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent>
-
-              <div className="space-y-5">
-
-                {scoreBreakdown.length > 0 ? (
-
-                  scoreBreakdown.map(
-                    (item: any, index: number) => (
-
-                      <div key={index}>
-
-                        <div className="mb-2 flex items-center justify-between">
-
-                          <span className="text-sm font-medium">
-                            {item?.category ||
-                              item?.name ||
-                              `Category ${index + 1}`}
-                          </span>
-
-                          <span className="text-sm font-semibold">
-                            {item?.score ?? 0}%
-                          </span>
-
-                        </div>
-
-                        <Progress
-                          value={item?.score ?? 0}
-                          className="h-2"
-                        />
-
-                      </div>
-
-                    )
-                  )
-
-                ) : (
-
-                  <p className="text-sm text-muted-foreground">
-                    No score breakdown available.
-                  </p>
-
-                )}
-
-              </div>
-
-            </CardContent>
-
-          </Card>
-
-
-          {/* STRENGTHS + WEAKNESSES */}
-
-          <div className="grid gap-6 md:grid-cols-2">
-
-            {/* STRENGTHS */}
-
-            <Card>
-
-              <CardHeader>
-
-                <CardTitle className="flex items-center gap-2">
-
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-
-                  Strengths
-
-                </CardTitle>
-
-              </CardHeader>
-
-              <CardContent>
-
-                {strengths.length > 0 ? (
-
-                  <div className="space-y-3">
-
-                    {strengths.map(
-                      (strength: any, index: number) => (
-
-                        <div
-                          key={index}
-                          className="flex gap-3"
-                        >
-
-                          <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
-
-                          <p className="text-sm leading-6">
-                            {typeof strength === "string"
-                              ? strength
-                              : strength?.text ||
-                                strength?.description ||
-                                JSON.stringify(strength)}
-                          </p>
-
-                        </div>
-
-                      )
-                    )}
+                    <span className="text-lg text-muted-foreground">
+                      /100
+                    </span>
 
                   </div>
 
-                ) : (
 
-                  <p className="text-sm text-muted-foreground">
-                    No strengths identified.
+                  <Progress
+                    value={score}
+                    className="mt-3"
+                  />
+
+
+                  <p className="text-xs text-muted-foreground mt-2">
+
+                    Candidate evaluation score
+
                   </p>
 
-                )}
+                </CardContent>
 
-              </CardContent>
+              </Card>
 
-            </Card>
 
 
-            {/* WEAKNESSES */}
+              {/* STATUS */}
 
-            <Card>
+              <Card>
 
-              <CardHeader>
+                <CardHeader
+                  className="flex flex-row items-center justify-between space-y-0 pb-2"
+                >
 
-                <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium">
+                    Recommendation
+                  </CardTitle>
 
-                  <AlertCircle className="h-5 w-5 text-red-500" />
 
-                  Weaknesses
+                  {isShortlisted ? (
 
-                </CardTitle>
+                    <CheckCircle className="h-5 w-5 text-green-600" />
 
-              </CardHeader>
+                  ) : (
 
-              <CardContent>
+                    <XCircle className="h-5 w-5 text-red-600" />
 
-                {weaknesses.length > 0 ? (
-
-                  <div className="space-y-3">
-
-                    {weaknesses.map(
-                      (weakness: any, index: number) => (
-
-                        <div
-                          key={index}
-                          className="flex gap-3"
-                        >
-
-                          <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-
-                          <p className="text-sm leading-6">
-                            {typeof weakness === "string"
-                              ? weakness
-                              : weakness?.text ||
-                                weakness?.description ||
-                                JSON.stringify(weakness)}
-                          </p>
-
-                        </div>
-
-                      )
-                    )}
-
-                  </div>
-
-                ) : (
-
-                  <p className="text-sm text-muted-foreground">
-                    No weaknesses identified.
-                  </p>
-
-                )}
-
-              </CardContent>
-
-            </Card>
-
-          </div>
-
-        </TabsContent>
-
-
-        {/* ================================================== */}
-        {/* QUESTION EVALUATION */}
-        {/* ================================================== */}
-
-        <TabsContent
-          value="questions"
-          className="space-y-6"
-        >
-
-          <Card>
-
-            <CardHeader>
-
-              <CardTitle>
-                Resume Evaluation Questions
-              </CardTitle>
-
-            </CardHeader>
-
-            <CardContent>
-
-              {questions.length > 0 ? (
-
-                <div className="space-y-6">
-
-                  {questions.map(
-                    (item: any, index: number) => (
-
-                      <div
-                        key={index}
-                        className="rounded-lg border p-5"
-                      >
-
-                        {/* QUESTION HEADER */}
-
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-
-                          <div className="flex gap-3">
-
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold">
-                              {index + 1}
-                            </div>
-
-                            <div>
-
-                              <h3 className="font-semibold leading-6">
-                                {item?.question ||
-                                  "Question not available"}
-                              </h3>
-
-                            </div>
-
-                          </div>
-
-
-                          <div className="flex items-center gap-2">
-
-                            {item?.weight !== undefined && (
-
-                              <Badge variant="outline">
-                                Weight: {item.weight}%
-                              </Badge>
-
-                            )}
-
-                            <Badge
-                              className={
-                                (item?.score ?? 0) >= 65
-                                  ? "bg-green-600"
-                                  : "bg-red-600"
-                              }
-                            >
-                              {item?.score ?? 0}/100
-                            </Badge>
-
-                          </div>
-
-                        </div>
-
-
-                        {/* ANSWER */}
-
-                        <div className="mt-5">
-
-                          <h4 className="mb-2 text-sm font-semibold">
-                            Answer from Resume
-                          </h4>
-
-                          <div className="rounded-md bg-muted/50 p-4">
-
-                            <p className="text-sm leading-6">
-                              {item?.answer ||
-                                "Information not available in the resume."}
-                            </p>
-
-                          </div>
-
-                        </div>
-
-
-                        {/* PROGRESS */}
-
-                        <div className="mt-5">
-
-                          <div className="mb-2 flex justify-between text-sm">
-
-                            <span className="text-muted-foreground">
-                              Score
-                            </span>
-
-                            <span className="font-semibold">
-                              {item?.score ?? 0}%
-                            </span>
-
-                          </div>
-
-                          <Progress
-                            value={item?.score ?? 0}
-                            className="h-2"
-                          />
-
-                        </div>
-
-
-                        {/* AI FEEDBACK */}
-
-                        <div className="mt-5">
-
-                          <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-
-                            <Star className="h-4 w-4" />
-
-                            AI Feedback
-
-                          </h4>
-
-                          <p className="text-sm leading-6 text-muted-foreground">
-                            {item?.feedback ||
-                              "No AI feedback available."}
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                    )
                   )}
 
+                </CardHeader>
+
+
+                <CardContent>
+
+                  <div className="text-2xl font-bold">
+
+                    {isShortlisted
+                      ? "Shortlisted"
+                      : "Rejected"}
+
+                  </div>
+
+
+                  <p className="text-xs text-muted-foreground mt-2">
+
+                    {isShortlisted
+                      ? "Candidate meets the required score."
+                      : "Candidate is below the required score."}
+
+                  </p>
+
+                </CardContent>
+
+              </Card>
+
+
+
+              {/* CANDIDATE */}
+
+              <Card>
+
+                <CardHeader
+                  className="flex flex-row items-center justify-between space-y-0 pb-2"
+                >
+
+                  <CardTitle className="text-sm font-medium">
+                    Candidate
+                  </CardTitle>
+
+                  <AlertCircle className="h-5 w-5 text-muted-foreground" />
+
+                </CardHeader>
+
+
+                <CardContent>
+
+                  <div className="text-xl font-bold">
+
+                    {
+                      analysisData?.analysis_report
+                        ?.candidate?.name ||
+                      analysisData?.candidate?.name ||
+                      "Unknown Candidate"
+                    }
+
+                  </div>
+
+
+                  <p className="text-xs text-muted-foreground mt-2">
+
+                    {
+                      analysisData?.analysis_report
+                        ?.candidate?.role ||
+                      analysisData?.candidate?.role ||
+                      "Role not available"
+                    }
+
+                  </p>
+
+                </CardContent>
+
+              </Card>
+
+
+            </div>
+
+
+
+            {/* =================================================
+                CANDIDATE INFORMATION
+            ================================================= */}
+
+            <Card>
+
+              <CardHeader>
+
+                <CardTitle>
+                  Candidate Information
+                </CardTitle>
+
+              </CardHeader>
+
+
+              <CardContent>
+
+                <div className="grid gap-4 md:grid-cols-2">
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Name
+                    </p>
+
+                    <p className="font-medium">
+
+                      {
+                        analysisData?.analysis_report
+                          ?.candidate?.name ||
+                        analysisData?.candidate?.name ||
+                        "Not available"
+                      }
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Email
+                    </p>
+
+                    <p className="font-medium">
+
+                      {
+                        analysisData?.analysis_report
+                          ?.candidate?.email ||
+                        analysisData?.candidate?.email ||
+                        "Not available"
+                      }
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Phone
+                    </p>
+
+                    <p className="font-medium">
+
+                      {
+                        analysisData?.analysis_report
+                          ?.candidate?.phone ||
+                        analysisData?.candidate?.phone ||
+                        "Not available"
+                      }
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Role
+                    </p>
+
+                    <p className="font-medium">
+
+                      {
+                        analysisData?.analysis_report
+                          ?.candidate?.role ||
+                        analysisData?.candidate?.role ||
+                        "Not available"
+                      }
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Experience
+                    </p>
+
+                    <p className="font-medium">
+
+                      {
+                        analysisData?.analysis_report
+                          ?.candidate?.experience ||
+                        analysisData?.candidate?.experience ||
+                        "Not available"
+                      }
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Location
+                    </p>
+
+                    <p className="font-medium">
+
+                      {
+                        analysisData?.analysis_report
+                          ?.candidate?.location ||
+                        analysisData?.candidate?.location ||
+                        "Not available"
+                      }
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      LinkedIn
+                    </p>
+
+                    <p className="font-medium">
+
+                      {
+                        analysisData?.analysis_report
+                          ?.candidate?.linkedIn ||
+                        analysisData?.candidate?.linkedIn ||
+                        "Not available"
+                      }
+
+                    </p>
+
+                  </div>
+
+
                 </div>
+
+              </CardContent>
+
+            </Card>
+
+
+
+            {/* =================================================
+                SHORTLIST / REJECT BUTTON
+            ================================================= */}
+
+            <div className="flex gap-2">
+
+              {isShortlisted ? (
+
+                <Button className="bg-green-600 text-white hover:bg-green-700">
+
+                  <ThumbsUp className="h-4 w-4 mr-2" />
+
+                  Shortlisted
+
+                </Button>
 
               ) : (
 
-                <div className="py-10 text-center">
+                <Button
+                  variant="outline"
+                  className="border-red-500 text-red-500 hover:bg-red-500/10"
+                >
 
-                  <AlertCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                  <ThumbsDown className="h-4 w-4 mr-2" />
 
-                  <p className="font-medium">
-                    No evaluation questions found
-                  </p>
+                  Rejected
 
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    The analysis does not contain any question evaluations.
-                  </p>
-
-                </div>
+                </Button>
 
               )}
 
-            </CardContent>
-
-          </Card>
-
-        </TabsContent>
+            </div>
 
 
-        {/* ================================================== */}
-        {/* CANDIDATE DETAILS */}
-        {/* ================================================== */}
 
-        <TabsContent
-          value="candidate"
-          className="space-y-6"
-        >
+            {/* =================================================
+                TABS
+            ================================================= */}
 
-          <Card>
+            <Tabs
+              defaultValue="strengths"
+              className="w-full"
+            >
 
-            <CardHeader>
+              <TabsList className="grid w-full grid-cols-3">
 
-              <CardTitle>
-                Candidate Information
-              </CardTitle>
+                <TabsTrigger value="strengths">
+                  Strengths
+                </TabsTrigger>
 
-            </CardHeader>
+                <TabsTrigger value="weaknesses">
+                  Weaknesses
+                </TabsTrigger>
 
-            <CardContent>
+                <TabsTrigger value="evaluation">
+                  Evaluation
+                </TabsTrigger>
 
-              <div className="grid gap-6 md:grid-cols-2">
+              </TabsList>
 
-                <div>
 
-                  <p className="text-sm text-muted-foreground">
-                    Full Name
-                  </p>
 
-                  <p className="mt-1 font-medium">
-                    {candidate?.name ||
-                      "Information not available"}
-                  </p>
+              {/* =================================================
+                  STRENGTHS
+              ================================================= */}
+
+              <TabsContent value="strengths">
+
+                <Card>
+
+                  <CardHeader>
+
+                    <CardTitle>
+                      Candidate Strengths
+                    </CardTitle>
+
+                  </CardHeader>
+
+
+                  <CardContent>
+
+                    <ul className="space-y-3">
+
+                      {(
+                        analysisData?.analysis_report
+                          ?.strengths || []
+                      ).map(
+                        (
+                          strength: string,
+                          index: number
+                        ) => (
+
+                          <li
+                            key={index}
+                            className="flex items-start gap-3"
+                          >
+
+                            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+
+                            <span>
+                              {strength}
+                            </span>
+
+                          </li>
+
+                        )
+                      )}
+
+                    </ul>
+
+                  </CardContent>
+
+                </Card>
+
+              </TabsContent>
+
+
+
+              {/* =================================================
+                  WEAKNESSES
+              ================================================= */}
+
+              <TabsContent value="weaknesses">
+
+                <Card>
+
+                  <CardHeader>
+
+                    <CardTitle>
+                      Candidate Weaknesses
+                    </CardTitle>
+
+                  </CardHeader>
+
+
+                  <CardContent>
+
+                    <ul className="space-y-3">
+
+                      {(
+                        analysisData?.analysis_report
+                          ?.weaknesses || []
+                      ).map(
+                        (
+                          weakness: string,
+                          index: number
+                        ) => (
+
+                          <li
+                            key={index}
+                            className="flex items-start gap-3"
+                          >
+
+                            <XCircle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+
+                            <span>
+                              {weakness}
+                            </span>
+
+                          </li>
+
+                        )
+                      )}
+
+                    </ul>
+
+                  </CardContent>
+
+                </Card>
+
+              </TabsContent>
+
+
+
+              {/* =================================================
+                  EVALUATION
+              ================================================= */}
+
+              <TabsContent value="evaluation">
+
+                <Card>
+
+                  <CardHeader>
+
+                    <CardTitle>
+                      Evaluation Questions
+                    </CardTitle>
+
+                  </CardHeader>
+
+
+                  <CardContent>
+
+                    <div className="rounded-md border">
+
+                      <Table>
+
+                        <TableHeader>
+
+                          <TableRow>
+
+                            <TableHead>
+                              Question
+                            </TableHead>
+
+                            <TableHead>
+                              Answer
+                            </TableHead>
+
+                            <TableHead>
+                              Weight
+                            </TableHead>
+
+                            <TableHead>
+                              AI Feedback
+                            </TableHead>
+
+                          </TableRow>
+
+                        </TableHeader>
+
+
+                        <TableBody>
+
+                          {(
+                            analysisData?.analysis_report
+                              ?.questions || []
+                          ).map(
+                            (
+                              item: any,
+                              index: number
+                            ) => (
+
+                              <TableRow
+                                key={index}
+                              >
+
+                                <TableCell className="font-medium">
+
+                                  {item.question}
+
+                                </TableCell>
+
+
+                                <TableCell>
+
+                                  {item.answer}
+
+                                </TableCell>
+
+
+                                <TableCell>
+
+                                  <Badge variant="outline">
+
+                                    {item.weight ?? 0}%
+
+                                  </Badge>
+
+                                </TableCell>
+
+
+                                <TableCell>
+
+                                  {item.feedback}
+
+                                </TableCell>
+
+                              </TableRow>
+
+                            )
+                          )}
+
+                        </TableBody>
+
+                      </Table>
+
+                    </div>
+
+                  </CardContent>
+
+                </Card>
+
+              </TabsContent>
+
+            </Tabs>
+
+
+
+            {/* =================================================
+                RECOMMENDATION
+            ================================================= */}
+
+            <Card>
+
+              <CardHeader>
+
+                <CardTitle>
+                  AI Recommendation
+                </CardTitle>
+
+              </CardHeader>
+
+
+              <CardContent>
+
+                <div className="space-y-4">
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Status
+                    </p>
+
+                    <Badge
+                      className={
+                        isShortlisted
+                          ? "bg-green-600"
+                          : "bg-red-600"
+                      }
+                    >
+
+                      {isShortlisted
+                        ? "Shortlisted"
+                        : "Rejected"}
+
+                    </Badge>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Summary
+                    </p>
+
+                    <p className="mt-1">
+
+                      {
+                        analysisData?.analysis_report
+                          ?.recommendation?.summary ||
+                        "No summary available."
+                      }
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Key Insight
+                    </p>
+
+                    <p className="mt-1">
+
+                      {
+                        analysisData?.analysis_report
+                          ?.recommendation?.key_insight ||
+                        "No key insight available."
+                      }
+
+                    </p>
+
+                  </div>
+
 
                 </div>
 
+              </CardContent>
 
-                <div>
-
-                  <p className="text-sm text-muted-foreground">
-                    Role
-                  </p>
-
-                  <p className="mt-1 font-medium">
-                    {candidate?.role ||
-                      "Information not available"}
-                  </p>
-
-                </div>
+            </Card>
 
 
-                <div>
+          </>
 
-                  <p className="text-sm text-muted-foreground">
-                    Email
-                  </p>
+        )}
 
-                  <p className="mt-1 font-medium">
-                    {candidate?.email ||
-                      "Information not available"}
-                  </p>
+      </div>
 
-                </div>
+    </DashboardLayout>
 
-
-                <div>
-
-                  <p className="text-sm text-muted-foreground">
-                    Phone
-                  </p>
-
-                  <p className="mt-1 font-medium">
-                    {candidate?.phone ||
-                      "Information not available"}
-                  </p>
-
-                </div>
-
-
-                <div>
-
-                  <p className="text-sm text-muted-foreground">
-                    Experience
-                  </p>
-
-                  <p className="mt-1 font-medium">
-                    {candidate?.experience ||
-                      "Information not available"}
-                  </p>
-
-                </div>
-
-
-                <div>
-
-                  <p className="text-sm text-muted-foreground">
-                    Location
-                  </p>
-
-                  <p className="mt-1 font-medium">
-                    {candidate?.location ||
-                      "Information not available"}
-                  </p>
-
-                </div>
-
-
-                <div className="md:col-span-2">
-
-                  <p className="text-sm text-muted-foreground">
-                    LinkedIn
-                  </p>
-
-                  <p className="mt-1 font-medium">
-
-                    {candidate?.linkedIn ? (
-
-                      <a
-                        href={candidate.linkedIn}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        {candidate.linkedIn}
-                      </a>
-
-                    ) : (
-
-                      "Information not available"
-
-                    )}
-
-                  </p>
-
-                </div>
-
-              </div>
-
-            </CardContent>
-
-          </Card>
-
-        </TabsContent>
-
-      </Tabs>
-
-
-      {/* ================================================== */}
-      {/* UPLOAD ANOTHER RESUME */}
-      {/* ================================================== */}
-
-      <Card>
-
-        <CardHeader>
-
-          <CardTitle className="flex items-center gap-2">
-
-            <Upload className="h-5 w-5" />
-
-            Analyze Another Resume
-
-          </CardTitle>
-
-        </CardHeader>
-
-        <CardContent>
-
-          <ResumeUpload
-            onUploadSuccess={(data) => {
-              console.log("Parsed:", data)
-              setAnalysisData(data)
-            }}
-          />
-
-        </CardContent>
-
-      </Card>
-
-    </div>
   )
 }
